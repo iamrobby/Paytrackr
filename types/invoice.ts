@@ -9,6 +9,7 @@ export type Invoice = {
   status: string;
   notes?: string;
   client_email?: string;
+  paid_date?: string | null;
 };
 
 export type InvoiceFormData = {
@@ -20,4 +21,12 @@ export type InvoiceFormData = {
   due_date: string;
   notes?: string;
   client_email?: string;
+};
+export type ClientRisk = {
+  client_name: string;
+  totalInvoices: number;
+  totalAmount: number;
+  avgDaysToPay: number;
+  riskLevel: 'Good' | 'Risky';
+  riskScore: number; // 0-100
 };

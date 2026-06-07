@@ -1,13 +1,43 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Shield, Zap, TrendingUp } from 'lucide-react';
+import { ArrowRight, Shield, Zap, TrendingUp, User, LogOut, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+  const router = useRouter();
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+    };
+
+    getUser();
+
+    // Listen for auth changes
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  };
+
   return (
     <div className="min-h-screen bg-zinc-950 text-white overflow-hidden">
-      {/* Navbar */}
+      {/* Dynamic Navbar */}
       <nav className="fixed top-0 w-full z-50 border-b border-white/10 bg-zinc-950/80 backdrop-blur-lg">
         <div className="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -20,16 +50,48 @@ export default function Home() {
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="hover:text-blue-400 transition">Features</a>
             <a href="#how" className="hover:text-blue-400 transition">How it Works</a>
-            <a href="#pricing" className="hover:text-blue-400 transition">Pricing</a>
           </div>
 
           <div className="flex items-center gap-4">
-            <Link href="/login">
-              <Button variant="ghost">Log in</Button>
-            </Link>
-            <Link href="/login">
-              <Button>Get Started Free</Button>
-            </Link>
+            {!loading && (
+              <>
+                {user ? (
+                  // Logged In User - Dropdown
+                  <div className="flex items-center gap-4">
+                    <Link href="/dashboard">
+                      <Button variant="outline" className="flex items-center gap-2 text-black">
+                        <LayoutDashboard size={18} />
+                        Dashboard
+                      </Button>
+                    </Link>
+
+                    <div className="flex items-center gap-2 bg-zinc-900 border border-white/10 rounded-xl px-4 py-2">
+                      <User size={18} />
+                      <span className="text-sm">{user.email?.split('@')[0]}</span>
+                    </div>
+
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={handleLogout}
+                      title="Logout"
+                    >
+                      <LogOut size={20} />
+                    </Button>
+                  </div>
+                ) : (
+                  // Not Logged In
+                  <>
+                    <Link href="/login">
+                      <Button variant="ghost">Log in</Button>
+                    </Link>
+                    <Link href="/login">
+                      <Button>Get Started Free</Button>
+                    </Link>
+                  </>
+                )}
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -43,7 +105,7 @@ export default function Home() {
 
           <h1 className="text-6xl md:text-7xl font-bold tracking-tighter mb-6">
             Never chase<br />
-            <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
               overdue payments
             </span>{" "}
             again
@@ -55,14 +117,11 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/login">
+            <Link href={user ? "/dashboard" : "/login"}>
               <Button size="lg" className="text-lg px-10 py-7 rounded-2xl">
-                Start Tracking Free <ArrowRight className="ml-2" />
+                {user ? "Go to Dashboard" : "Start Tracking Free"} <ArrowRight className="ml-2" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="text-lg px-10 py-7 rounded-2xl text-black">
-              Watch Demo
-            </Button>
           </div>
 
           <p className="text-sm text-zinc-500 mt-6">No credit card required • Cancel anytime</p>
@@ -124,7 +183,7 @@ export default function Home() {
             Join hundreds of freelancers who stopped chasing payments.
           </p>
           <Link href="/login">
-            <Button size="lg" className="text-lg px-12 py-8 rounded-2xl text-xl">
+            <Button size="lg" className="text-xl px-12 py-8 rounded-2xl">
               Create Free Account → 
             </Button>
           </Link>
