@@ -39,7 +39,7 @@ export async function GET(request: Request) {
   for (const invoice of invoices || []) {
     const daysUntilDue = differenceInDays(new Date(invoice.due_date), new Date());
 
-    if (daysUntilDue === 7 || daysUntilDue <=5 || daysUntilDue <=0 ) {
+    if (daysUntilDue === 7 || daysUntilDue === 0 || daysUntilDue === -1 ) {
       try {
         // Render React component to HTML
         const emailHtml = await render(
